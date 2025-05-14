@@ -11,6 +11,9 @@ export interface Document {
   status: string;
   summary: string | null;
   extractedText: string | null;
+  blobUrl?: string;
+  blobName?: string;
+  fileSize?: number;
 }
 
 /**
@@ -40,19 +43,22 @@ export async function getDocument(id: string): Promise<Document> {
 }
 
 /**
- * Upload a document
+ * Upload a document to Azure storage
  */
-export async function uploadDocument(file: File): Promise<Document> {
+export async function uploadDocument(file: File, projectId: string, isTranscript: boolean = false): Promise<Document> {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('projectId', projectId);
+  formData.append('isTranscript', isTranscript ? 'true' : 'false');
   
-  const response = await fetch(`${API_URL}/api/documents/upload`, {
+  const response = await fetch('/api/upload', {
     method: 'POST',
     body: formData,
   });
   
   if (!response.ok) {
-    throw new Error('Failed to upload document');
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to upload document');
   }
   
   return response.json();

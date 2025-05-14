@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # PostgreSQL Database
   postgres:
@@ -38,11 +40,13 @@ services:
 
   # Frontend Next.js service
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3010:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+    volumes:
+      - ./frontend/.env:/app/.env
     restart: unless-stopped
     depends_on:
       - backend
@@ -57,3 +61,10 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
+# Define top-level environment variables to read from frontend/.env
+x-environment:
+  &frontend-environment
+  FRONTEND_AZURE_STORAGE_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME}
+  FRONTEND_AZURE_STORAGE_ACCOUNT_KEY: ${AZURE_STORAGE_ACCOUNT_KEY}
+  FRONTEND_AZURE_STORAGE_CONTAINER_NAME: ${AZURE_STORAGE_CONTAINER_NAME}
