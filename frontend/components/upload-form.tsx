@@ -71,7 +71,7 @@ export function UploadForm() {
       }, 200);
       
       // Upload the document
-      const result = await uploadDocument(file, 'default');
+      const result = await uploadDocument(file);
       
       clearInterval(progressInterval);
       setUploadProgress(100);

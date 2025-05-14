@@ -58,6 +58,7 @@ def health_check():
 @app.post("/api/documents", response_model=DocumentResponse)
 async def upload_document(
     file: UploadFile = File(...),
+    is_transcript: Optional[bool] = Form(False),
     db: Session = Depends(get_db)
 ):
     """Upload a document to the service"""
@@ -70,11 +71,17 @@ async def upload_document(
         filename = f"{uuid.uuid4()}.pdf"
         file_content = await file.read()
         
-        # Upload file to Azure Blob Storage
-        blob_url = azure_storage_client.upload_file(
+        # Prepare metadata
+        metadata = {
+            "isTranscript": str(is_transcript).lower()
+        }
+        
+        # Upload file to Azure Blob Storage with metadata
+        upload_result = azure_storage_client.upload_file(
             file_content, 
             filename, 
-            file.content_type
+            file.content_type,
+            metadata=metadata
         )
         
         # Create document in database
@@ -82,7 +89,7 @@ async def upload_document(
         document = repo.create_document(
             filename=filename,
             original_filename=file.filename,
-            blob_url=blob_url,
+            blob_url=upload_result['url'],
             content_type=file.content_type
         )
         

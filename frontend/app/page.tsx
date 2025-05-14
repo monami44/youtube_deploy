@@ -2,8 +2,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
+import { getDocuments, Document } from "@/lib/api";
+import { formatDistanceToNow } from "date-fns";
 
-export default function Home() {
+// Force dynamic rendering and disable caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// This function fetches documents on the server
+async function fetchDocuments() {
+  console.log('Server-side: Fetching documents');
+  try {
+    const data = await getDocuments();
+    console.log(`Server-side: Successfully fetched ${data.length} documents`);
+    return { documents: data, error: null };
+  } catch (error) {
+    console.error('Server-side: Error fetching documents:', error);
+    return { 
+      documents: [], 
+      error: error instanceof Error ? error.message : 'Failed to fetch documents' 
+    };
+  }
+}
+
+export default async function Home() {
+  // Call the fetch function
+  const { documents, error } = await fetchDocuments();
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -16,20 +41,25 @@ export default function Home() {
         </Link>
       </div>
       
+      {error && (
+        <div className="p-4 border border-red-500 bg-red-50 text-red-700 rounded-md">
+          Error loading documents: {error}
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* This would be populated with real data from the API */}
-        <DocumentCard
-          title="Sample Document"
-          description="Uploaded on 2024-10-22"
-          status="Processed"
-          id="1"
-        />
-        <DocumentCard
-          title="Example PDF"
-          description="Uploaded on 2024-10-20"
-          status="Processing"
-          id="2"
-        />
+        {/* Real documents from the backend */}
+        {documents.map((doc) => (
+          <DocumentCard
+            key={doc.id}
+            title={doc.filename || "Unnamed Document"}
+            description={doc.uploadDate ? `Uploaded ${formatDistanceToNow(new Date(doc.uploadDate))} ago` : "Upload date unknown"}
+            status={formatStatus(doc.status)}
+            id={doc.id}
+          />
+        ))}
+        
+        {/* Add new document card */}
         <Link href="/upload" className="h-full">
           <Card className="h-full border-dashed flex items-center justify-center hover:border-primary/50 transition-colors cursor-pointer">
             <CardContent className="flex flex-col items-center justify-center p-6">
@@ -39,8 +69,19 @@ export default function Home() {
           </Card>
         </Link>
       </div>
+      
+      {documents.length === 0 && !error && (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">No documents found. Upload a document to get started.</p>
+        </div>
+      )}
     </div>
   );
+}
+
+function formatStatus(status: string): string {
+  // Capitalize first letter
+  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function DocumentCard({ title, description, status, id }: { 
@@ -49,19 +90,23 @@ function DocumentCard({ title, description, status, id }: {
   status: string;
   id: string;
 }) {
+  // Determine status color
+  const statusColor = 
+    status.toLowerCase() === "completed" ? "bg-green-500" :
+    status.toLowerCase() === "processing" ? "bg-yellow-500" :
+    status.toLowerCase() === "pending" ? "bg-blue-500" : 
+    status.toLowerCase() === "error" ? "bg-red-500" : "bg-gray-500";
+
   return (
     <Link href={`/documents/${id}`}>
       <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="truncate">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center">
-            <div className={`h-2 w-2 rounded-full mr-2 ${
-              status === "Processed" ? "bg-green-500" : 
-              status === "Processing" ? "bg-yellow-500" : "bg-red-500"
-            }`} />
+            <div className={`h-2 w-2 rounded-full mr-2 ${statusColor}`} />
             <span className="text-sm text-muted-foreground">{status}</span>
           </div>
         </CardContent>
