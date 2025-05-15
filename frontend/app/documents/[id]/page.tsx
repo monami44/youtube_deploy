@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { getDocument, Document } from "@/lib/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { RegenerateSummaryButton } from "@/components/regenerate-summary-button";
 
 // Ensure page is server-side rendered and dynamic
 export const dynamic = 'force-dynamic';
@@ -110,6 +111,11 @@ export default async function DocumentPage({ params }: { params: { id: string } 
             </div>
           )}
         </CardContent>
+        {document.status === "completed" && (
+          <CardFooter>
+            <RegenerateSummaryButton documentId={document.id} />
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

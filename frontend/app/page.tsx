@@ -50,7 +50,7 @@ export default async function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Real documents from the backend */}
         {documents.map((doc) => (
-          <DocumentCard
+        <DocumentCard
             key={doc.id}
             title={doc.filename || "Unnamed Document"}
             description={doc.uploadDate ? `Uploaded ${formatDistanceToNow(new Date(doc.uploadDate))} ago` : "Upload date unknown"}
